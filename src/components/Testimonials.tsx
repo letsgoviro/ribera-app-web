@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, ChevronLeft, ChevronRight, Quote } from 'lucide-react';
+import { fetchTestimonialsByLanguage, type TestimonialRecord } from '../services/appwriteData';
 
 interface TestimonialsProps {
   language: 'en' | 'sw';
@@ -9,6 +10,9 @@ interface TestimonialsProps {
 
 const Testimonials: React.FC<TestimonialsProps> = ({ language, darkMode }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [remoteTestimonials, setRemoteTestimonials] = useState<TestimonialRecord[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
   const content = {
     en: {
@@ -89,7 +93,46 @@ const Testimonials: React.FC<TestimonialsProps> = ({ language, darkMode }) => {
     }
   };
 
-  const testimonials = content[language].testimonials;
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadTestimonials = async () => {
+      setIsLoading(true);
+      try {
+        const records = await fetchTestimonialsByLanguage(language);
+        if (!isMounted) return;
+        if (records.length > 0) {
+          setRemoteTestimonials(records);
+        } else {
+          setRemoteTestimonials(null);
+        }
+        setFetchError(false);
+      } catch (error) {
+        console.error('Failed to load testimonials', error);
+        if (isMounted) {
+          setRemoteTestimonials(null);
+          setFetchError(true);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadTestimonials();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [language]);
+
+  const fallbackTestimonials = content[language].testimonials;
+  const testimonials = remoteTestimonials?.length ? remoteTestimonials : fallbackTestimonials;
+
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [language, remoteTestimonials]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -131,11 +174,20 @@ const Testimonials: React.FC<TestimonialsProps> = ({ language, darkMode }) => {
             >
               {content[language].title}
             </motion.h2>
-            <p className={`text-xl md:text-2xl max-w-3xl mx-auto font-inter ${
-              darkMode ? 'text-gray-300' : 'text-gray-700'
-            }`}>
-              {content[language].subtitle}
-            </p>
+            <div className="space-y-3">
+              <p className={`text-xl md:text-2xl max-w-3xl mx-auto font-inter ${
+                darkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                {content[language].subtitle}
+              </p>
+              {fetchError && (
+                <p className="text-sm text-red-400">
+                  {language === 'en'
+                    ? 'We could not load the latest testimonials. Showing highlights instead.'
+                    : 'Hatukuweza kupakia ushuhuda wa hivi karibuni. Tunaonyesha chaguo-msingi kwa sasa.'}
+                </p>
+              )}
+            </div>
           </motion.div>
 
           <div className="relative max-w-5xl mx-auto">
@@ -194,7 +246,7 @@ const Testimonials: React.FC<TestimonialsProps> = ({ language, darkMode }) => {
                     animate={{ scale: 1 }}
                     transition={{ duration: 0.6, delay: 0.3 }}
                   >
-                    {[...Array(testimonials[currentIndex].rating)].map((_, i) => (
+                        {[...Array(testimonials[currentIndex].rating ?? 5)].map((_, i) => (
                       <motion.div
                         key={i}
                         initial={{ opacity: 0, scale: 0 }}
@@ -226,7 +278,10 @@ const Testimonials: React.FC<TestimonialsProps> = ({ language, darkMode }) => {
                     transition={{ duration: 0.8, delay: 0.7 }}
                   >
                     <motion.img
-                      src={testimonials[currentIndex].image}
+                      src={
+                        testimonials[currentIndex].image ||
+                        `https://ui-avatars.com/api/?name=${encodeURIComponent(testimonials[currentIndex].name)}&background=3f3d56&color=ffffff`
+                      }
                       alt={testimonials[currentIndex].name}
                       className="w-20 h-20 rounded-full object-cover shadow-xl border-4 border-white"
                       whileHover={{ scale: 1.1, rotate: 5 }}

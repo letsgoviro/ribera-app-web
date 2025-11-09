@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Gift, Star } from 'lucide-react';
+import { fetchSiteMetrics, type SiteMetrics } from '../services/appwriteData';
 
 interface AboutProps {
   language: 'en' | 'sw';
@@ -8,6 +9,38 @@ interface AboutProps {
 }
 
 const About: React.FC<AboutProps> = ({ language, darkMode }) => {
+  const [metrics, setMetrics] = useState<SiteMetrics | null>(null);
+  const [isLoadingMetrics, setIsLoadingMetrics] = useState(false);
+  const [metricsError, setMetricsError] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadMetrics = async () => {
+      setIsLoadingMetrics(true);
+      try {
+        const data = await fetchSiteMetrics();
+        if (!isMounted) return;
+        setMetrics(data);
+        setMetricsError(false);
+      } catch (error) {
+        console.error('Unable to fetch site metrics', error);
+        if (isMounted) {
+          setMetrics(null);
+          setMetricsError(true);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingMetrics(false);
+        }
+      }
+    };
+
+    void loadMetrics();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
   const content = {
     en: {
       title: 'About Ribera',
@@ -162,9 +195,24 @@ const About: React.FC<AboutProps> = ({ language, darkMode }) => {
             className="grid grid-cols-1 md:grid-cols-3 gap-8"
           >
             {[
-              { number: '10K+', label: language === 'en' ? 'Events Created' : 'Matukio Yaliyotengenezwa' },
-              { number: '50K+', label: language === 'en' ? 'Tickets Sold' : 'Tiketi Zilizouzwa' },
-              { number: '25K+', label: language === 'en' ? 'Happy Users' : 'Watumiaji Wenye Furaha' }
+              {
+                number: metrics?.eventsCreated
+                  ? `${metrics.eventsCreated.toLocaleString()}+`
+                  : '10K+',
+                label: language === 'en' ? 'Events Created' : 'Matukio Yaliyotengenezwa',
+              },
+              {
+                number: metrics?.ticketsSold
+                  ? `${metrics.ticketsSold.toLocaleString()}+`
+                  : '50K+',
+                label: language === 'en' ? 'Tickets Sold' : 'Tiketi Zilizouzwa',
+              },
+              {
+                number: metrics?.happyUsers
+                  ? `${metrics.happyUsers.toLocaleString()}+`
+                  : '25K+',
+                label: language === 'en' ? 'Happy Users' : 'Watumiaji Wenye Furaha',
+              },
             ].map((stat, index) => (
               <motion.div 
                 key={index}
@@ -182,7 +230,7 @@ const About: React.FC<AboutProps> = ({ language, darkMode }) => {
                   animate={{ scale: [1, 1.1, 1] }}
                   transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: index * 0.5 }}
                 >
-                  {stat.number}
+                  {isLoadingMetrics ? (language === 'en' ? '...' : '...') : stat.number}
                 </motion.div>
                 <div className={`text-lg font-medium font-inter ${
                   darkMode ? 'text-gray-400' : 'text-gray-600'
@@ -199,6 +247,20 @@ const About: React.FC<AboutProps> = ({ language, darkMode }) => {
               </motion.div>
             ))}
           </motion.div>
+          {metrics?.updatedAt && (
+            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              {language === 'en'
+                ? `Figures updated ${new Date(metrics.updatedAt).toLocaleDateString()}`
+                : `Takwimu zimesasishwa ${new Date(metrics.updatedAt).toLocaleDateString()}`}
+            </p>
+          )}
+          {metricsError && !isLoadingMetrics && (
+            <p className="text-sm text-red-400">
+              {language === 'en'
+                ? 'Live metrics are temporarily unavailable. Showing estimates.'
+                : 'Takwimu za moja kwa moja hazipatikani kwa sasa. Zinaonyesha makadirio.'}
+            </p>
+          )}
         </div>
       </div>
     </section>

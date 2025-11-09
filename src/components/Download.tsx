@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Smartphone, Zap, Sparkles } from 'lucide-react';
+import { fetchDownloadLinks, type DownloadLinks } from '../services/appwriteData';
 
 interface DownloadProps {
   language: 'en' | 'sw';
@@ -8,6 +9,57 @@ interface DownloadProps {
 }
 
 const Download: React.FC<DownloadProps> = ({ language, darkMode }) => {
+  const [links, setLinks] = useState<DownloadLinks | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadLinks = async () => {
+      try {
+        const response = await fetchDownloadLinks();
+        if (!isMounted) return;
+        setLinks(response);
+        setHasError(false);
+      } catch (error) {
+        console.error('Failed to fetch download links', error);
+        if (isMounted) {
+          setHasError(true);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadLinks();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const buildPublicDownloadUrl = (fileId?: string) => {
+    if (!fileId) return undefined;
+
+    const endpoint = import.meta.env.VITE_APPWRITE_ENDPOINT;
+    const projectId = import.meta.env.VITE_APPWRITE_PROJECT_ID;
+    const bucketId = import.meta.env.VITE_APPWRITE_BUCKET_ID;
+
+    if (!endpoint || !projectId || !bucketId) {
+      console.warn('Missing Appwrite storage configuration for generating download URL.');
+      return undefined;
+    }
+
+    const normalizedEndpoint = endpoint.endsWith('/v1') ? endpoint.slice(0, -2) : endpoint;
+    return `${normalizedEndpoint}/storage/buckets/${bucketId}/files/${fileId}/download?project=${projectId}&mode=public`;
+  };
+
+  const googlePlayUrl = links?.googlePlayUrl;
+  const appStoreUrl = links?.appStoreUrl;
+  const directApkUrl = links?.directApkUrl ?? buildPublicDownloadUrl(links?.directApkFileId);
   const content = {
     en: {
       title: 'Get Ribera App Today',
@@ -64,14 +116,14 @@ const Download: React.FC<DownloadProps> = ({ language, darkMode }) => {
 
             <div className="space-y-6">
               {/* Google Play Store */}
-              <motion.button
-                whileHover={{ scale: 1.05, y: -5 }}
-                whileTap={{ scale: 0.95 }}
-                className={`flex items-center space-x-6 w-full p-6 rounded-3xl border-2 backdrop-blur-xl transition-all duration-300 shadow-xl ${
+              <motion.div
+                whileHover={{ scale: googlePlayUrl ? 1.05 : 1, y: googlePlayUrl ? -5 : 0 }}
+                whileTap={{ scale: googlePlayUrl ? 0.95 : 1 }}
+                className={`relative flex items-center space-x-6 w-full p-6 rounded-3xl border-2 backdrop-blur-xl transition-all duration-300 shadow-xl ${
                   darkMode 
                     ? 'border-gray-700/50 hover:border-gray-600/50 bg-gray-900/80' 
                     : 'border-white/50 hover:border-white/80 bg-white/90'
-                } premium-shadow`}
+                } premium-shadow ${googlePlayUrl ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}
               >
                 <motion.div 
                   className="w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-3xl flex items-center justify-center shadow-lg"
@@ -82,23 +134,42 @@ const Download: React.FC<DownloadProps> = ({ language, darkMode }) => {
                 </motion.div>
                 <div className="flex-1 text-left">
                   <div className={`text-sm font-inter ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {content[language].comingSoon}
+                    {googlePlayUrl
+                      ? links?.lastUpdatedAt
+                        ? `${language === 'en' ? 'Updated' : 'Imeboreshwa'} ${new Date(links.lastUpdatedAt).toLocaleDateString()}`
+                        : language === 'en'
+                          ? 'Live on Play Store'
+                          : 'Inapatikana kwenye Play Store'
+                      : isLoading
+                        ? language === 'en'
+                          ? 'Checking availability...'
+                          : 'Inaangalia upatikanaji...'
+                        : content[language].comingSoon}
                   </div>
                   <div className={`font-semibold font-poppins text-lg ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                     {content[language].googlePlay}
                   </div>
                 </div>
-              </motion.button>
+                {googlePlayUrl && (
+                  <a
+                    href={googlePlayUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute inset-0"
+                    aria-label="Download from Google Play"
+                  />
+                )}
+              </motion.div>
 
               {/* App Store */}
-              <motion.button
-                whileHover={{ scale: 1.05, y: -5 }}
-                whileTap={{ scale: 0.95 }}
-                className={`flex items-center space-x-6 w-full p-6 rounded-3xl border-2 backdrop-blur-xl transition-all duration-300 shadow-xl ${
+              <motion.div
+                whileHover={{ scale: appStoreUrl ? 1.05 : 1, y: appStoreUrl ? -5 : 0 }}
+                whileTap={{ scale: appStoreUrl ? 0.95 : 1 }}
+                className={`relative flex items-center space-x-6 w-full p-6 rounded-3xl border-2 backdrop-blur-xl transition-all duration-300 shadow-xl ${
                   darkMode 
                     ? 'border-gray-700/50 hover:border-gray-600/50 bg-gray-900/80' 
                     : 'border-white/50 hover:border-white/80 bg-white/90'
-                } premium-shadow`}
+                } premium-shadow ${appStoreUrl ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}
               >
                 <motion.div 
                   className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl flex items-center justify-center shadow-lg"
@@ -109,19 +180,38 @@ const Download: React.FC<DownloadProps> = ({ language, darkMode }) => {
                 </motion.div>
                 <div className="flex-1 text-left">
                   <div className={`text-sm font-inter ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {content[language].comingSoon}
+                    {appStoreUrl
+                      ? language === 'en'
+                        ? 'Live on App Store'
+                        : 'Inapatikana kwenye App Store'
+                      : isLoading
+                        ? language === 'en'
+                          ? 'Checking availability...'
+                          : 'Inaangalia upatikanaji...'
+                        : content[language].comingSoon}
                   </div>
                   <div className={`font-semibold font-poppins text-lg ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                     {content[language].appStore}
                   </div>
                 </div>
-              </motion.button>
+                {appStoreUrl && (
+                  <a
+                    href={appStoreUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute inset-0"
+                    aria-label="Download from App Store"
+                  />
+                )}
+              </motion.div>
 
               {/* Direct APK */}
-              <motion.button
-                whileHover={{ scale: 1.05, y: -5 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex items-center space-x-6 w-full p-6 rounded-3xl bg-gradient-to-r from-accent-1 to-accent-3 text-white shadow-2xl hover:shadow-accent-1/50 transition-all duration-300"
+              <motion.div
+                whileHover={{ scale: directApkUrl ? 1.05 : 1, y: directApkUrl ? -5 : 0 }}
+                whileTap={{ scale: directApkUrl ? 0.95 : 1 }}
+                className={`relative flex items-center space-x-6 w-full p-6 rounded-3xl bg-gradient-to-r from-accent-1 to-accent-3 text-white shadow-2xl transition-all duration-300 ${
+                  directApkUrl ? 'hover:shadow-accent-1/50' : 'opacity-70'
+                }`}
               >
                 <motion.div 
                   className="w-16 h-16 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-sm"
@@ -132,13 +222,30 @@ const Download: React.FC<DownloadProps> = ({ language, darkMode }) => {
                 </motion.div>
                 <div className="flex-1 text-left">
                   <div className="text-sm text-white/80 font-inter">
-                    {content[language].comingSoon}
+                    {directApkUrl
+                      ? language === 'en'
+                        ? 'Direct install package'
+                        : 'Faili ya kusakinisha moja kwa moja'
+                      : isLoading
+                        ? language === 'en'
+                          ? 'Preparing download link...'
+                          : 'Inatayarisha kiungo cha kupakua...'
+                        : content[language].comingSoon}
                   </div>
                   <div className="font-semibold font-poppins text-lg">
                     {content[language].directApk}
                   </div>
                 </div>
-              </motion.button>
+                {directApkUrl && (
+                  <a
+                    href={directApkUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute inset-0"
+                    aria-label="Download APK"
+                  />
+                )}
+              </motion.div>
 
               <motion.p 
                 className={`text-base font-inter ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}
@@ -147,7 +254,11 @@ const Download: React.FC<DownloadProps> = ({ language, darkMode }) => {
                 transition={{ duration: 0.6, delay: 0.8 }}
                 viewport={{ once: true }}
               >
-                {content[language].apkNote}
+                {hasError
+                  ? language === 'en'
+                    ? 'We could not load download information. Please refresh the page or try again later.'
+                    : 'Hatukuweza kupakia taarifa za kupakua. Tafadhali onyesha upya ukurasa au jaribu tena baadaye.'
+                  : content[language].apkNote}
               </motion.p>
             </div>
           </motion.div>

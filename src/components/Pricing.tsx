@@ -5,9 +5,10 @@ import { Gift, Briefcase, Handshake, Check, Sparkles, Crown } from 'lucide-react
 interface PricingProps {
   language: 'en' | 'sw';
   darkMode: boolean;
+  onLeadCapture: (planName: string) => void;
 }
 
-const Pricing: React.FC<PricingProps> = ({ language, darkMode }) => {
+const Pricing: React.FC<PricingProps> = ({ language, darkMode, onLeadCapture }) => {
   const content = {
     en: {
       title: 'Financial Plan & Business Model',
@@ -318,6 +319,7 @@ const Pricing: React.FC<PricingProps> = ({ language, darkMode }) => {
                     whileInView={{ opacity: 1 }}
                     transition={{ duration: 0.6, delay: 0.8 }}
                     viewport={{ once: true }}
+                    onClick={() => onLeadCapture(plan.name)}
                   >
                     {index === 2 ? content[language].becomePartner : content[language].startFree}
                   </motion.button>

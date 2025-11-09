@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Phone, MapPin, Send, Sparkles } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { submitContactMessage } from '../services/appwriteData';
 
 interface ContactProps {
   language: 'en' | 'sw';
@@ -15,6 +16,7 @@ const Contact: React.FC<ContactProps> = ({ language, darkMode }) => {
     subject: '',
     message: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const content = {
     en: {
@@ -43,19 +45,41 @@ const Contact: React.FC<ContactProps> = ({ language, darkMode }) => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Simulate form submission
-    toast.success(language === 'en' ? 'Message sent successfully!' : 'Ujumbe umetumwa kwa mafanikio!');
-    
-    // Reset form
-    setFormData({
-      name: '',
-      email: '',
-      subject: '',
-      message: ''
-    });
+
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+
+    try {
+      await submitContactMessage({
+        ...formData,
+        language,
+      });
+
+      toast.success(
+        language === 'en'
+          ? 'Message sent successfully!'
+          : 'Ujumbe umetumwa kwa mafanikio!'
+      );
+
+      setFormData({
+        name: '',
+        email: '',
+        subject: '',
+        message: ''
+      });
+    } catch (error) {
+      console.error('Failed to submit contact message', error);
+      toast.error(
+        language === 'en'
+          ? 'We could not send your message. Please try again later.'
+          : 'Hatukuweza kutuma ujumbe wako. Tafadhali jaribu tena baadaye.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -223,10 +247,12 @@ const Contact: React.FC<ContactProps> = ({ language, darkMode }) => {
                   viewport={{ once: true }}
                   whileHover={{ scale: 1.05, y: -3 }}
                   whileTap={{ scale: 0.95 }}
-                  className="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-accent-1 to-accent-3 text-white px-8 py-5 rounded-2xl font-semibold font-poppins text-lg shadow-2xl hover:shadow-accent-1/50 transition-all duration-300"
+                  className="w-full flex items-center justify-center space-x-3 bg-gradient-to-r from-accent-1 to-accent-3 text-white px-8 py-5 rounded-2xl font-semibold font-poppins text-lg shadow-2xl hover:shadow-accent-1/50 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
+                  disabled={isSubmitting}
+                  aria-busy={isSubmitting}
                 >
                   <Send size={24} />
-                  <span>{content[language].send}</span>
+                  <span>{isSubmitting ? content[language].sending : content[language].send}</span>
                 </motion.button>
               </form>
             </motion.div>

@@ -5,14 +5,15 @@ import { Download, Users, ArrowRight, Sparkles } from 'lucide-react';
 interface HeroProps {
   language: 'en' | 'sw';
   darkMode: boolean;
+  onOrganizerClick: () => void;
 }
 
-const Hero: React.FC<HeroProps> = ({ language, darkMode }) => {
+const Hero: React.FC<HeroProps> = ({ language, darkMode, onOrganizerClick }) => {
   const [currentTaglineIndex, setCurrentTaglineIndex] = useState(0);
 
   const taglines = [
     { en: 'Ribera — The Smart Way to Host Events.', sw: 'Ribera — Njia ya Kisasa ya Kuandaa Matukio.' },
-    { en: 'Connect. Celebrate. Cash Out — Instantly.', sw: 'Unganika. Sherehekea. Pokea Malipo — Papo Hapo.' },
+    { en: 'Connect Celebrate Cash Out — Instantly', sw: 'Unganika Sherehekea Pokea Malipo — Papo Hapo' },
     { en: 'Built for Organizers, Loved by Attendees.', sw: 'Imeundwa kwa Waandaaji, Inapendwa na Washiriki.' },
     { en: 'Simple Events. Fast Payments.', sw: 'Matukio Rahisi. Malipo Haraka.' },
     { en: 'Your Event, Your Way — With Ribera.', sw: 'Tukio Lako, Kwa Njia Yako — Ukiwa na Ribera.' },
@@ -37,14 +38,14 @@ const Hero: React.FC<HeroProps> = ({ language, darkMode }) => {
 
   const content = {
     en: {
-      headline: 'Plan, Connect, Celebrate Effortlessly.',
+      headline: 'Plan Connect Celebrate Effortlessly',
       subtext: 'Your modern African event & e-ticketing platform — secure, smart, and powered by CIFIC Enterprises.',
       downloadApp: 'Download App',
       joinOrganizer: 'Join as Organizer',
       learnMore: 'Learn More'
     },
     sw: {
-      headline: 'Panga. Unganisha. Sherehekea Kwa Urahisi.',
+      headline: 'Panga Unganisha Sherehekea Kwa Urahisi',
       subtext: 'Jukwaa lako la kisasa la matukio na tiketi — salama, janja, na linatengenezwa na CIFIC Enterprises.',
       downloadApp: 'Pakua Programu',
       joinOrganizer: 'Jiunge Kama Mandaaji',
@@ -55,11 +56,11 @@ const Hero: React.FC<HeroProps> = ({ language, darkMode }) => {
   const paymentCardContent = language === 'en'
     ? {
         title: 'BillPay Connected',
-        subtitle: 'Payments across every mobile network and bank card.'
+        subtitle: 'Receive payments from Tigo Pesa, Azam Pesa, M-Pesa, HaloPesa, EzyPesa, T-Pesa, and bank cards with instant organizer settlements.'
       }
     : {
         title: 'BillPay Imeunganishwa',
-        subtitle: 'Malipo ya harakati mitandao yote ya simu na kadi za benki.'
+        subtitle: 'Pokea malipo kutoka Tigo Pesa, Azam Pesa, M-Pesa, HaloPesa, EzyPesa, T-Pesa na kadi za benki papo hapo kwa waandaaji.'
       };
 
   return (
@@ -194,6 +195,7 @@ const Hero: React.FC<HeroProps> = ({ language, darkMode }) => {
                 }`}
                 whileHover={{ scale: 1.05, y: -5 }}
                 whileTap={{ scale: 0.95 }}
+                onClick={onOrganizerClick}
               >
                 <Users size={24} />
                 <span className="text-lg">{content[language].joinOrganizer}</span>

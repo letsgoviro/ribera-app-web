@@ -7,9 +7,10 @@ interface HeaderProps {
   setLanguage: (lang: 'en' | 'sw') => void;
   darkMode: boolean;
   setDarkMode: (dark: boolean) => void;
+  onGetStarted: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ language, setLanguage, darkMode, setDarkMode }) => {
+const Header: React.FC<HeaderProps> = ({ language, setLanguage, darkMode, setDarkMode, onGetStarted }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const content = {
@@ -146,6 +147,7 @@ const Header: React.FC<HeaderProps> = ({ language, setLanguage, darkMode, setDar
               className="hidden md:flex items-center space-x-2 bg-gradient-to-r from-accent-1 to-accent-3 text-white px-6 py-3 rounded-xl font-semibold font-poppins shadow-xl hover:shadow-2xl transition-all duration-300"
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
+              onClick={onGetStarted}
             >
               <Download size={18} />
               <span>{content[language].getStarted}</span>
@@ -197,6 +199,10 @@ const Header: React.FC<HeaderProps> = ({ language, setLanguage, darkMode, setDar
                   className="flex items-center justify-center space-x-2 bg-gradient-to-r from-accent-1 to-accent-3 text-white px-6 py-3 rounded-xl font-semibold font-poppins w-full shadow-lg"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    onGetStarted();
+                    setIsMenuOpen(false);
+                  }}
                 >
                   <Download size={18} />
                   <span>{content[language].getStarted}</span>
