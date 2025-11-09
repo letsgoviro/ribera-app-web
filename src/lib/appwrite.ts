@@ -18,7 +18,19 @@ export const storage = new Storage(client);
 export const appwriteClient = client;
 export const createDocumentId = () => ID.unique();
 
-export const getEnv = (key: keyof ImportMetaEnv) => {
+export type EnvVarKey =
+  | 'VITE_APPWRITE_ENDPOINT'
+  | 'VITE_APPWRITE_PROJECT_ID'
+  | 'VITE_APPWRITE_DATABASE_ID'
+  | 'VITE_APPWRITE_BUCKET_ID'
+  | 'VITE_APPWRITE_CONTACT_COLLECTION_ID'
+  | 'VITE_APPWRITE_LEADS_COLLECTION_ID'
+  | 'VITE_APPWRITE_TESTIMONIALS_COLLECTION_ID'
+  | 'VITE_APPWRITE_METRICS_COLLECTION_ID'
+  | 'VITE_APPWRITE_DOWNLOADS_COLLECTION_ID'
+  | 'VITE_APPWRITE_DOWNLOADS_DOCUMENT_ID';
+
+export const getEnv = (key: EnvVarKey) => {
   const value = import.meta.env[key];
   if (!value) {
     console.warn(`Missing environment variable: ${key}`);

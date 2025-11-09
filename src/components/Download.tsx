@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Smartphone, Zap, Sparkles } from 'lucide-react';
 import { fetchDownloadLinks, type DownloadLinks } from '../services/appwriteData';
+import { getEnv } from '../lib/appwrite';
 
 interface DownloadProps {
   language: 'en' | 'sw';
@@ -44,9 +45,9 @@ const Download: React.FC<DownloadProps> = ({ language, darkMode }) => {
   const buildPublicDownloadUrl = (fileId?: string) => {
     if (!fileId) return undefined;
 
-    const endpoint = import.meta.env.VITE_APPWRITE_ENDPOINT;
-    const projectId = import.meta.env.VITE_APPWRITE_PROJECT_ID;
-    const bucketId = import.meta.env.VITE_APPWRITE_BUCKET_ID;
+    const endpoint = getEnv('VITE_APPWRITE_ENDPOINT');
+    const projectId = getEnv('VITE_APPWRITE_PROJECT_ID');
+    const bucketId = getEnv('VITE_APPWRITE_BUCKET_ID');
 
     if (!endpoint || !projectId || !bucketId) {
       console.warn('Missing Appwrite storage configuration for generating download URL.');

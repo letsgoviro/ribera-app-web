@@ -180,6 +180,13 @@ const Testimonials: React.FC<TestimonialsProps> = ({ language, darkMode }) => {
               }`}>
                 {content[language].subtitle}
               </p>
+              {isLoading && (
+                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  {language === 'en'
+                    ? 'Loading testimonials...'
+                    : 'Inapakia ushuhuda...'}
+                </p>
+              )}
               {fetchError && (
                 <p className="text-sm text-red-400">
                   {language === 'en'
